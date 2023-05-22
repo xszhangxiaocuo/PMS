@@ -2,11 +2,13 @@ package user
 
 import (
 	"context"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	common "github.com/xszhangxiacuo/PMS/project-common"
 	"github.com/xszhangxiacuo/PMS/project-user/internal/dao"
 	"github.com/xszhangxiacuo/PMS/project-user/internal/repo"
 	"github.com/xszhangxiacuo/PMS/project-user/pkg/model"
+	"go.uber.org/zap"
 	"log"
 	"net/http"
 	"strconv"
@@ -37,13 +39,13 @@ func (uh *UserHandler) getCaptcha(ctx *gin.Context) {
 	//4.调用短信平台（用go协程执行，接口可以快速响应）
 	go func() {
 		time.Sleep(2 * time.Second)
-		log.Println("短信发送成功")
+		zap.L().Info("短信发送成功")
 		//5.将验证码存入redis，验证码有效时间15min
 		c, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 		defer cancel()
-		err := uh.cache.Put(c, "REGISTER_"+mobile, strconv.Itoa(code), 15*time.Minute)
+		err := uh.cache.Put(c, "REGISTER_"+mobile, strconv.Itoa(code), 1*time.Minute)
 		if err != nil {
-			log.Printf("验证码存入redis出错，cause by:%v\n", err)
+			zap.L().Error(fmt.Sprintf("验证码存入redis出错，cause by:%v\n", err))
 		}
 		log.Printf("手机号和验证码成功存入redis：REGISTER_%s:%s", mobile, strconv.Itoa(code))
 	}()
